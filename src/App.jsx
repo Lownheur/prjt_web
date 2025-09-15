@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Social from './pages/Social'
+import EditQuizz from './pages/EditQuizz'
 
 function App() {
   return (
@@ -32,6 +33,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Social />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/edit-quizz/:quizzId" 
+                element={
+                  <ProtectedRoute>
+                    <EditQuizz />
                   </ProtectedRoute>
                 } 
               />
