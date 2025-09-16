@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import logoBlack from '../assets/logo_black_quizz_master.png'
+import logoWhite from '../assets/logo_white_quizz_master.png'
 
 const Register = () => {
   const [email, setEmail] = useState('')
@@ -66,7 +68,14 @@ const Register = () => {
     <div className="auth-container">
       <div className="auth-header">
         <Link to="/" className="app-title-link">
-          <h1 className="app-title">Quizz Master</h1>
+          <div className="brand-logo">
+            <img 
+              src={isDark ? logoWhite : logoBlack} 
+              alt="Quizz Master Logo" 
+              className="app-logo"
+            />
+            <h1 className="app-title">Quizz Master</h1>
+          </div>
         </Link>
         <div className="auth-header-actions">
           <Link to="/" className="home-link">

@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
+import logoBlack from '../assets/logo_black_quizz_master.png'
+import logoWhite from '../assets/logo_white_quizz_master.png'
 
 const Home = () => {
   const { isDark, toggleTheme } = useTheme()
@@ -10,7 +12,14 @@ const Home = () => {
       <header className="public-header">
         <div className="header-container">
           <div className="header-left">
-            <h1 className="app-title">Quizz Master</h1>
+            <div className="brand-logo">
+              <img 
+                src={isDark ? logoWhite : logoBlack} 
+                alt="Quizz Master Logo" 
+                className="app-logo"
+              />
+              <h1 className="app-title">Quizz Master</h1>
+            </div>
           </div>
           
           <div className="header-right">
