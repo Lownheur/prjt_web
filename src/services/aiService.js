@@ -1,13 +1,6 @@
-const OPENROUTER_API_KEY = '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'
+const OPENROUTER_API_KEY = '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'
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
-
-// Liste de modèles gratuits de fallback
-const FREE_MODELS = [
-  'meta-llama/llama-4-maverick:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
-  'microsoft/phi-3-mini-128k-instruct:free',
-  'huggingface/zephyr-7b-beta:free'
-]
+const MODEL = 'deepseek/deepseek-chat-v3.1:free'
 
 export class AIService {
   static async generateQuestions(quizzData, options = {}) {
@@ -22,71 +15,76 @@ export class AIService {
     // Construire le prompt
     const prompt = this.buildPrompt(title, description, existingQuestions, additionalContext, questionCount)
 
-    // Essayer chaque modèle jusqu'à ce qu'un fonctionne
-    for (let i = 0; i < FREE_MODELS.length; i++) {
-      const model = FREE_MODELS[i]
-      console.log(`Tentative avec le modèle: ${model}`)
-
-      try {
-        const response = await fetch(OPENROUTER_API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': window.location.origin,
-            'X-Title': 'Quizzmaster'
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: [
-              {
-                role: 'system',
-                content: 'Tu es un assistant expert en création de questions de quiz éducatives. Tu dois répondre uniquement avec du JSON valide, sans texte supplémentaire.'
-              },
-              {
-                role: 'user',
-                content: prompt
-              }
-            ],
-            temperature: 0.7,
-            max_tokens: 2000
-          })
+    try {
+      console.log(`Génération avec Llama 3.2 3B`)
+      console.log('Modèle utilisé:', MODEL)
+      console.log('API Key présente:', !!OPENROUTER_API_KEY)
+      
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Quizzmaster'
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {
+              role: 'system',
+              content: 'Tu es un assistant expert en création de questions de quiz éducatives. Tu dois répondre uniquement avec du JSON valide, sans texte supplémentaire.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
         })
+      })
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMsg = errorData.error?.message || response.statusText
+        
+        console.error('Erreur API complète:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData,
+          headers: Object.fromEntries(response.headers.entries())
+        })
+        
         if (response.status === 429) {
-          console.log(`Modèle ${model} surchargé (429), essai du suivant...`)
-          continue
+          throw new Error('Le modèle est temporairement surchargé. Réessayez dans quelques minutes.')
+        } else if (response.status === 401) {
+          throw new Error(`Erreur d'authentification (401). Détails: ${errorMsg}`)
+        } else if (response.status === 404) {
+          throw new Error(`Modèle non trouvé (404): ${MODEL}. Vérifiez que le modèle existe sur OpenRouter.`)
+        } else {
+          throw new Error(`Erreur API (${response.status}): ${errorMsg}`)
         }
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          console.log(`Erreur avec ${model}:`, errorData)
-          continue
-        }
-
-        const data = await response.json()
-        const content = data.choices[0]?.message?.content
-
-        if (!content) {
-          console.log(`Réponse vide pour ${model}`)
-          continue
-        }
-
-        // Parser la réponse JSON
-        const questions = this.parseAIResponse(content)
-        console.log(`Succès avec le modèle: ${model}`)
-        return { success: true, questions, usedModel: model }
-
-      } catch (error) {
-        console.error(`Erreur avec le modèle ${model}:`, error)
-        // Continuer avec le modèle suivant
       }
-    }
 
-    // Si tous les modèles ont échoué
-    return { 
-      success: false, 
-      error: 'Tous les modèles IA sont temporairement indisponibles. Réessayez dans quelques minutes.'
+      const data = await response.json()
+      const content = data.choices[0]?.message?.content
+
+      if (!content) {
+        throw new Error('Réponse vide de l\'IA')
+      }
+
+      // Parser la réponse JSON
+      const questions = this.parseAIResponse(content)
+      console.log('Questions générées avec succès par Llama 3.2 3B')
+      return { success: true, questions, usedModel: 'Llama 3.2 3B' }
+
+    } catch (error) {
+      console.error('Erreur génération IA:', error)
+      return { 
+        success: false, 
+        error: error.message || 'Erreur lors de la génération des questions'
+      }
     }
   }
 

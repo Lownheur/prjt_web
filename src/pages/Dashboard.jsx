@@ -45,8 +45,7 @@ const Dashboard = () => {
   }
 
   const handlePlay = (quizz) => {
-    console.log('Lancer quizz:', quizz)
-    // TODO: Implémenter le lancement
+    navigate(`/quiz-config/${quizz.id}`)
   }
 
   return (

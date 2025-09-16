@@ -65,14 +65,21 @@ const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-header">
-        <h1 className="app-title">Quizz Master</h1>
-        <button 
-          onClick={toggleTheme} 
-          className="theme-toggle"
-          title={isDark ? 'Mode clair' : 'Mode sombre'}
-        >
-          {isDark ? '☀️' : '🌙'}
-        </button>
+        <Link to="/" className="app-title-link">
+          <h1 className="app-title">Quizz Master</h1>
+        </Link>
+        <div className="auth-header-actions">
+          <Link to="/" className="home-link">
+            ← Accueil
+          </Link>
+          <button 
+            onClick={toggleTheme} 
+            className="theme-toggle"
+            title={isDark ? 'Mode clair' : 'Mode sombre'}
+          >
+            {isDark ? '☀️' : '🌙'}
+          </button>
+        </div>
       </div>
       
       <div className="auth-box">

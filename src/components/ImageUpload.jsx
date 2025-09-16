@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
-const ImageUpload = ({ onImageUploaded, currentImageUrl = null }) => {
+const ImageUpload = ({ onImageUploaded, currentImageUrl = null, acceptedTypes = 'image/*', bucketName = 'quizz-images' }) => {
   const [uploading, setUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const [error, setError] = useState('')
@@ -35,7 +35,7 @@ const ImageUpload = ({ onImageUploaded, currentImageUrl = null }) => {
 
       // Upload vers Supabase Storage
       const { data, error: uploadError } = await supabase.storage
-        .from('quizz-images')
+        .from(bucketName)
         .upload(fileName, file)
 
       if (uploadError) {
@@ -44,7 +44,7 @@ const ImageUpload = ({ onImageUploaded, currentImageUrl = null }) => {
 
       // Obtenir l'URL publique
       const { data: urlData } = supabase.storage
-        .from('quizz-images')
+        .from(bucketName)
         .getPublicUrl(fileName)
 
       const publicUrl = urlData.publicUrl
@@ -157,7 +157,7 @@ const ImageUpload = ({ onImageUploaded, currentImageUrl = null }) => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={acceptedTypes}
         onChange={handleFileInputChange}
         style={{ display: 'none' }}
         disabled={uploading}

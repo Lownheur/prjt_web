@@ -9,7 +9,7 @@ const Header = () => {
 
   const handleSignOut = async () => {
     await signOut()
-    navigate('/connexion')
+    navigate('/')
   }
 
   return (
@@ -21,6 +21,7 @@ const Header = () => {
             <nav className="nav-links">
               <Link to="/dashboard" className="nav-link">Dashboard</Link>
               <Link to="/social" className="nav-link">Social</Link>
+              <Link to="/profile" className="nav-link">Profil</Link>
             </nav>
           )}
         </div>
