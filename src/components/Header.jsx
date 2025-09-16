@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
@@ -10,6 +10,7 @@ const Header = () => {
   const { user, signOut } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const [userProfile, setUserProfile] = useState(null)
 
   useEffect(() => {
@@ -55,8 +56,18 @@ const Header = () => {
           </div>
           {user && (
             <nav className="nav-links">
-              <Link to="/dashboard" className="nav-link">Dashboard</Link>
-              <Link to="/social" className="nav-link">Social</Link>
+              <Link 
+                to="/dashboard" 
+                className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/social" 
+                className={`nav-link ${location.pathname === '/social' ? 'active' : ''}`}
+              >
+                Social
+              </Link>
             </nav>
           )}
         </div>
