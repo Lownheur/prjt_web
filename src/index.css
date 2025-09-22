@@ -879,6 +879,44 @@ body {
   .page-header h1 {
     font-size: 2rem;
   }
+}
+
+/* Très petits écrans */
+@media (max-width: 480px) {
+  /* Header public très petits écrans */
+  .public-header .header-container {
+    padding: 0 0.5rem;
+  }
+  
+  .public-header .header-left {
+    gap: 0.5rem;
+    max-width: 70%;
+  }
+  
+  .public-header .header-right {
+    gap: 0.5rem;
+    max-width: 30%;
+  }
+  
+  .public-header .hamburger-menu {
+    height: 32px !important;
+    width: 32px !important;
+    padding: 0.2rem !important;
+  }
+  
+  .public-header .app-title {
+    font-size: 1rem;
+  }
+  
+  .public-header .app-logo {
+    height: 28px;
+    width: 28px;
+  }
+  
+  .content-grid {
+    gap: 1rem;
+    padding: 0 1rem;
+  }
   
   .quizz-actions {
     flex-direction: column;
