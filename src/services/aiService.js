@@ -1,4 +1,4 @@
-const OPENROUTER_API_KEY = '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'
+const OPENROUTER_API_KEY = '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'
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const MODEL = 'deepseek/deepseek-chat-v3.1:free'
 
