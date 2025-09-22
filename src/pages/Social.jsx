@@ -93,11 +93,6 @@ const Social = () => {
       <Header />
       <main className="main-content">
         <div className="page-container">
-          <div className="page-header">
-            <h1>Communauté</h1>
-            <p>Découvrez les créateurs de quizz et leurs créations publiques</p>
-          </div>
-          
           {error ? (
             <div className="error-state">
               <h2>Erreur</h2>

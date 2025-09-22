@@ -53,11 +53,6 @@ const Dashboard = () => {
       <Header />
       <main className="main-content">
         <div className="page-container">
-          <div className="page-header">
-            <h1>Dashboard</h1>
-            <p>Gérez vos quizz et créez-en de nouveaux</p>
-          </div>
-          
           <div className="dashboard-actions">
             <button 
               onClick={() => setIsModalOpen(true)}

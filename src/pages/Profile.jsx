@@ -1,22 +1,17 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
-import ImageUpload from '../components/ImageUpload'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
 const Profile = () => {
-  const navigate = useNavigate()
   const { user } = useAuth()
   
   const [profile, setProfile] = useState(null)
-  const [username, setUsername] = useState('')
-  const [description, setDescription] = useState('')
-  const [photoUrl, setPhotoUrl] = useState('')
   const [loading, setLoading] = useState(true)
+  const [editingField, setEditingField] = useState(null) // 'username', 'description', 'photo'
+  const [tempValue, setTempValue] = useState('')
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
     if (user) {
@@ -26,8 +21,6 @@ const Profile = () => {
 
   const loadProfile = async () => {
     setLoading(true)
-    setError('')
-
     try {
       const { data, error } = await supabase
         .from('profile')
@@ -37,80 +30,91 @@ const Profile = () => {
 
       if (error) {
         console.error('Erreur lors du chargement du profil:', error)
-        setError('Erreur lors du chargement du profil')
       } else {
         setProfile(data)
-        setUsername(data.username || '')
-        setDescription(data.description || '')
-        setPhotoUrl(data.photo_url || '')
       }
     } catch (err) {
       console.error('Erreur inattendue:', err)
-      setError('Erreur inattendue lors du chargement')
     }
-
     setLoading(false)
   }
 
-  const handleSave = async (e) => {
-    e.preventDefault()
-    
-    if (!username.trim()) {
-      setError('Le nom d\'utilisateur est requis')
-      return
-    }
+  const showMessage = (type, text) => {
+    setMessage({ type, text })
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+  }
 
-    if (username.length < 3) {
-      setError('Le nom d\'utilisateur doit contenir au moins 3 caractères')
-      return
-    }
+  const startEdit = (field, currentValue = '') => {
+    setEditingField(field)
+    setTempValue(currentValue)
+  }
 
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      setError('Le nom d\'utilisateur ne peut contenir que des lettres, chiffres et underscore')
-      return
+  const cancelEdit = () => {
+    setEditingField(null)
+    setTempValue('')
+  }
+
+  const saveField = async (field, value) => {
+    if (field === 'username') {
+      if (!value.trim() || value.length < 3 || !/^[a-zA-Z0-9_]+$/.test(value)) {
+        showMessage('error', 'Nom d\'utilisateur invalide (min 3 caractères, lettres/chiffres/underscore)')
+        return
+      }
     }
 
     setSaving(true)
-    setError('')
-    setSuccess('')
-
     try {
+      const updateData = {
+        [field === 'photo' ? 'photo_url' : field]: field === 'description' ? (value.trim() || null) : value.trim(),
+        updated_at: new Date().toISOString()
+      }
+
       const { error } = await supabase
         .from('profile')
-        .update({
-          username: username.trim(),
-          description: description.trim() || null,
-          photo_url: photoUrl || null,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', user.id)
 
       if (error) {
-        console.error('Erreur lors de la sauvegarde:', error)
         if (error.code === '23505') {
-          setError('Ce nom d\'utilisateur est déjà pris')
+          showMessage('error', 'Ce nom d\'utilisateur est déjà pris')
         } else {
-          setError('Erreur lors de la sauvegarde du profil')
+          showMessage('error', 'Erreur lors de la sauvegarde')
         }
       } else {
-        setSuccess('Profil mis à jour avec succès !')
-        // Recharger le profil pour être sûr
-        await loadProfile()
+        setProfile(prev => ({
+          ...prev,
+          [field === 'photo' ? 'photo_url' : field]: field === 'description' ? (value.trim() || null) : value.trim()
+        }))
+        setEditingField(null)
+        showMessage('success', 'Modifié avec succès !')
       }
     } catch (err) {
-      console.error('Erreur inattendue:', err)
-      setError('Erreur inattendue lors de la sauvegarde')
+      showMessage('error', 'Erreur inattendue')
     }
-
     setSaving(false)
   }
 
-  const handleImageUploaded = (url) => {
-    setPhotoUrl(url || '')
-  }
+  const handlePhotoUpload = async (file) => {
+    setSaving(true)
+    try {
+      const fileName = `${user.id}/${Date.now()}.${file.name.split('.').pop()}`
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(fileName, file)
 
-  const handleBackToDashboard = () => {
-    navigate('/dashboard')
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(fileName)
+
+      const publicUrl = urlData.publicUrl
+      await saveField('photo', publicUrl)
+    } catch (err) {
+      showMessage('error', 'Erreur lors de l\'upload de l\'image')
+    }
+    setSaving(false)
   }
 
   if (loading) {
@@ -132,14 +136,9 @@ const Profile = () => {
       <div className="app-layout">
         <Header />
         <main className="main-content">
-          <div className="page-container">
-            <div className="error-state">
-              <h2>Erreur</h2>
-              <p>Impossible de charger votre profil</p>
-              <button onClick={handleBackToDashboard} className="primary-button">
-                Retour au Dashboard
-              </button>
-            </div>
+          <div className="error-state">
+            <h2>Erreur</h2>
+            <p>Impossible de charger votre profil</p>
           </div>
         </main>
       </div>
@@ -150,125 +149,144 @@ const Profile = () => {
     <div className="app-layout">
       <Header />
       <main className="main-content">
-        <div className="page-container">
-          <div className="profile-header">
-            <button 
-              onClick={handleBackToDashboard}
-              className="back-button"
-            >
-              ← Retour au Dashboard
-            </button>
-            <h1>Mon Profil</h1>
+        <div className="compact-profile-container">
+          {message.text && (
+            <div className={`message ${message.type === 'error' ? 'error-message' : 'success-message'}`}>
+              {message.text}
+            </div>
+          )}
+
+          {/* Photo de profil */}
+          <div className="profile-item">
+            <div className="profile-photo-container">
+              {profile.photo_url ? (
+                <img 
+                  src={profile.photo_url} 
+                  alt="Photo de profil" 
+                  className="compact-profile-photo"
+                />
+              ) : (
+                <div className="compact-profile-placeholder">
+                  <span className="profile-initials">
+                    {profile.username?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+              )}
+              <button 
+                className="edit-photo-btn"
+                onClick={() => document.getElementById('photo-input').click()}
+                disabled={saving}
+              >
+                ✏️
+              </button>
+              <input
+                id="photo-input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => e.target.files[0] && handlePhotoUpload(e.target.files[0])}
+                style={{ display: 'none' }}
+              />
+            </div>
           </div>
 
-          <div className="profile-content">
-            <form onSubmit={handleSave} className="profile-form">
-              <div className="profile-section">
-                <h2>Photo de profil</h2>
-                <div className="profile-photo-section">
-                  <div className="current-photo">
-                    {photoUrl ? (
-                      <img 
-                        src={photoUrl} 
-                        alt="Photo de profil" 
-                        className="profile-photo"
-                      />
-                    ) : (
-                      <div className="profile-photo-placeholder">
-                        <span className="profile-initials">
-                          {username.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="photo-upload-section">
-                    <ImageUpload
-                      currentImageUrl={photoUrl}
-                      onImageUploaded={handleImageUploaded}
-                      acceptedTypes="image/*"
-                      bucketName="profile-photos"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="profile-section">
-                <h2>Informations personnelles</h2>
-                
-                <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={profile.email}
-                    className="form-input disabled"
-                    disabled
-                  />
-                  <small className="form-hint">L'email ne peut pas être modifié</small>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="username">Nom d'utilisateur *</label>
+          {/* Nom d'utilisateur */}
+          <div className="profile-item">
+            <label className="profile-label">Nom d'utilisateur</label>
+            <div className="profile-field">
+              {editingField === 'username' ? (
+                <div className="edit-field">
                   <input
                     type="text"
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="form-input"
-                    placeholder="votre_username"
-                    required
+                    value={tempValue}
+                    onChange={(e) => setTempValue(e.target.value)}
+                    className="inline-input"
+                    placeholder="Nom d'utilisateur"
+                    autoFocus
                   />
-                  <small className="form-hint">
-                    Au moins 3 caractères, lettres, chiffres et underscore uniquement
-                  </small>
+                  <div className="edit-actions">
+                    <button 
+                      onClick={() => saveField('username', tempValue)}
+                      className="save-btn"
+                      disabled={saving}
+                    >
+                      ✓
+                    </button>
+                    <button 
+                      onClick={cancelEdit}
+                      className="cancel-btn"
+                      disabled={saving}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <div className="display-field">
+                  <span className="field-value">{profile.username || 'Non défini'}</span>
+                  <button 
+                    onClick={() => startEdit('username', profile.username || '')}
+                    className="edit-btn"
+                  >
+                    ✏️
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
-                <div className="form-group">
-                  <label htmlFor="description">Bio / Description</label>
+          {/* Email (non modifiable) */}
+          <div className="profile-item">
+            <label className="profile-label">Email</label>
+            <div className="profile-field">
+              <span className="field-value disabled">{profile.email}</span>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="profile-item">
+            <label className="profile-label">Bio</label>
+            <div className="profile-field">
+              {editingField === 'description' ? (
+                <div className="edit-field">
                   <textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="form-textarea"
+                    value={tempValue}
+                    onChange={(e) => setTempValue(e.target.value)}
+                    className="inline-textarea"
                     placeholder="Parlez-nous de vous..."
-                    rows="4"
                     maxLength="500"
+                    autoFocus
                   />
-                  <small className="form-hint">
-                    {description.length}/500 caractères
-                  </small>
+                  <div className="edit-actions">
+                    <button 
+                      onClick={() => saveField('description', tempValue)}
+                      className="save-btn"
+                      disabled={saving}
+                    >
+                      ✓
+                    </button>
+                    <button 
+                      onClick={cancelEdit}
+                      className="cancel-btn"
+                      disabled={saving}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              {error && (
-                <div className="error-message">
-                  {error}
+              ) : (
+                <div className="display-field">
+                  <span className="field-value">
+                    {profile.description || 'Aucune description'}
+                  </span>
+                  <button 
+                    onClick={() => startEdit('description', profile.description || '')}
+                    className="edit-btn"
+                  >
+                    ✏️
+                  </button>
                 </div>
               )}
-
-              {success && (
-                <div className="success-message">
-                  {success}
-                </div>
-              )}
-
-              <div className="profile-actions">
-                <button 
-                  type="button"
-                  onClick={handleBackToDashboard}
-                  className="secondary-button"
-                >
-                  Annuler
-                </button>
-                <button 
-                  type="submit"
-                  className="primary-button"
-                  disabled={saving}
-                >
-                  {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       </main>

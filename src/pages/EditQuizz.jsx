@@ -19,6 +19,9 @@ const EditQuizz = () => {
   const [showAIModal, setShowAIModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [updatingVisibility, setUpdatingVisibility] = useState(false)
 
   useEffect(() => {
     if (user && quizzId) {
@@ -130,6 +133,74 @@ const EditQuizz = () => {
     setQuestions([...questions, ...savedQuestions])
   }
 
+  const handleToggleVisibility = async () => {
+    setUpdatingVisibility(true)
+    
+    try {
+      const newVisibility = !quizz.is_public
+      
+      const { error } = await supabase
+        .from('quizz_theme')
+        .update({ 
+          is_public: newVisibility,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', quizzId)
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour:', error)
+        alert('Erreur lors de la modification de la visibilité')
+      } else {
+        setQuizz({ ...quizz, is_public: newVisibility })
+      }
+    } catch (err) {
+      console.error('Erreur inattendue:', err)
+      alert('Erreur inattendue')
+    }
+    
+    setUpdatingVisibility(false)
+  }
+
+  const handleDeleteQuizz = async () => {
+    setDeleting(true)
+    
+    try {
+      // Supprimer d'abord toutes les questions
+      const { error: questionsError } = await supabase
+        .from('quizz_question')
+        .delete()
+        .eq('quizz_id', quizzId)
+
+      if (questionsError) {
+        console.error('Erreur lors de la suppression des questions:', questionsError)
+        alert('Erreur lors de la suppression des questions')
+        setDeleting(false)
+        return
+      }
+
+      // Puis supprimer le quizz
+      const { error: quizzError } = await supabase
+        .from('quizz_theme')
+        .delete()
+        .eq('id', quizzId)
+        .eq('user_id', user.id)
+
+      if (quizzError) {
+        console.error('Erreur lors de la suppression du quizz:', quizzError)
+        alert('Erreur lors de la suppression du quizz')
+      } else {
+        // Rediriger vers le dashboard
+        navigate('/dashboard')
+      }
+    } catch (err) {
+      console.error('Erreur inattendue:', err)
+      alert('Erreur inattendue lors de la suppression')
+    }
+    
+    setDeleting(false)
+    setShowDeleteConfirm(false)
+  }
+
   if (loading) {
     return (
       <div className="app-layout">
@@ -183,8 +254,26 @@ const EditQuizz = () => {
                   <span className="question-count-badge">
                     {questions.length} question{questions.length !== 1 ? 's' : ''}
                   </span>
-                  {quizz.is_public && <span className="public-badge">Public</span>}
+                  <span className={`visibility-badge ${quizz.is_public ? 'public' : 'private'}`}>
+                    {quizz.is_public ? '🌍 Public' : '🔒 Privé'}
+                  </span>
                 </div>
+              </div>
+              <div className="quizz-actions">
+                <button 
+                  onClick={handleToggleVisibility}
+                  className={`visibility-toggle-btn ${quizz.is_public ? 'make-private' : 'make-public'}`}
+                  disabled={updatingVisibility}
+                >
+                  {updatingVisibility ? '⏳' : quizz.is_public ? '🔒 Rendre privé' : '🌍 Rendre public'}
+                </button>
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="delete-quiz-btn"
+                  disabled={deleting}
+                >
+                  🗑️ Supprimer
+                </button>
               </div>
             </div>
           </div>
@@ -248,6 +337,48 @@ const EditQuizz = () => {
             existingQuestions={questions}
             onQuestionsGenerated={handleAIQuestionsGenerated}
           />
+
+          {/* Modal de confirmation de suppression */}
+          {showDeleteConfirm && (
+            <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+              <div className="modal-content delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>⚠️ Supprimer le quizz</h2>
+                </div>
+                <div className="modal-body">
+                  <p>Êtes-vous sûr de vouloir supprimer définitivement ce quizz ?</p>
+                  <div className="delete-warning">
+                    <p><strong>"{quizz.title}"</strong></p>
+                    <p>Cette action supprimera :</p>
+                    <ul>
+                      <li>✗ Le quizz et sa description</li>
+                      <li>✗ Toutes les {questions.length} questions</li>
+                      <li>✗ Toutes les images associées</li>
+                    </ul>
+                    <p className="warning-text">
+                      <strong>Cette action est irréversible !</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button 
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="secondary-button"
+                    disabled={deleting}
+                  >
+                    Annuler
+                  </button>
+                  <button 
+                    onClick={handleDeleteQuizz}
+                    className="delete-confirm-btn"
+                    disabled={deleting}
+                  >
+                    {deleting ? '⏳ Suppression...' : '🗑️ Supprimer définitivement'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
