@@ -13,11 +13,7 @@ const ImageUpload = ({ onImageUploaded, currentImageUrl = null, acceptedTypes = 
   const handleFileSelect = async (file) => {
     if (!file) return
 
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('image/')) {
-      setError('Veuillez sélectionner un fichier image')
-      return
-    }
+
 
     // Vérifier la taille (5MB max)
     if (file.size > 5 * 1024 * 1024) {
