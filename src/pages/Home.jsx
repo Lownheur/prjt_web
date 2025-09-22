@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
 import logoBlack from '../assets/logo_black_quizz_master.png'
@@ -5,6 +6,27 @@ import logoWhite from '../assets/logo_white_quizz_master.png'
 
 const Home = () => {
   const { isDark, toggleTheme } = useTheme()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
+  // Fermer le menu mobile quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobileMenuOpen && !event.target.closest('.mobile-menu-overlay') && !event.target.closest('.hamburger-menu')) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [isMobileMenuOpen])
 
   return (
     <div className="home-layout">
@@ -39,6 +61,36 @@ const Home = () => {
                 Inscription
               </Link>
             </div>
+            
+            {/* Bouton hamburger mobile */}
+            <button 
+              className={`hamburger-menu ${isMobileMenuOpen ? 'open' : ''}`}
+              onClick={toggleMobileMenu}
+            >
+              <div className="hamburger-line"></div>
+              <div className="hamburger-line"></div>
+              <div className="hamburger-line"></div>
+            </button>
+          </div>
+        </div>
+        
+        {/* Menu mobile overlay */}
+        <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'open' : ''}`}>
+          <div className="mobile-nav-links">
+            <Link 
+              to="/connexion" 
+              className="mobile-nav-link"
+              onClick={closeMobileMenu}
+            >
+              Connexion
+            </Link>
+            <Link 
+              to="/inscription" 
+              className="mobile-nav-link"
+              onClick={closeMobileMenu}
+            >
+              Inscription
+            </Link>
           </div>
         </div>
       </header>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { supabase } from '../lib/supabase'
@@ -10,7 +10,9 @@ const Header = () => {
   const { user, signOut } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const [userProfile, setUserProfile] = useState(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -41,6 +43,26 @@ const Header = () => {
     navigate('/')
   }
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
+  // Fermer le menu mobile quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobileMenuOpen && !event.target.closest('.mobile-menu-overlay') && !event.target.closest('.hamburger-menu')) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [isMobileMenuOpen])
+
   return (
     <header className="header">
       <div className="header-container">
@@ -55,8 +77,18 @@ const Header = () => {
           </div>
           {user && (
             <nav className="nav-links">
-              <Link to="/dashboard" className="nav-link">Dashboard</Link>
-              <Link to="/social" className="nav-link">Social</Link>
+              <Link 
+                to="/dashboard" 
+                className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/social" 
+                className={`nav-link ${location.pathname === '/social' ? 'active' : ''}`}
+              >
+                Social
+              </Link>
             </nav>
           )}
         </div>
@@ -103,8 +135,91 @@ const Header = () => {
               </button>
             </div>
           )}
+          
+          {/* Bouton hamburger mobile */}
+          {user && (
+            <button 
+              className={`hamburger-menu ${isMobileMenuOpen ? 'open' : ''}`}
+              onClick={toggleMobileMenu}
+            >
+              <div className="hamburger-line"></div>
+              <div className="hamburger-line"></div>
+              <div className="hamburger-line"></div>
+            </button>
+          )}
         </div>
       </div>
+      
+      {/* Menu mobile overlay */}
+      {user && (
+        <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'open' : ''}`}>
+          <div className="mobile-nav-links">
+            <Link 
+              to="/dashboard" 
+              className={`mobile-nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Dashboard
+            </Link>
+            <Link 
+              to="/social" 
+              className={`mobile-nav-link ${location.pathname === '/social' ? 'active' : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Social
+            </Link>
+            <Link 
+              to="/profile" 
+              className={`mobile-nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
+              onClick={closeMobileMenu}
+            >
+              Profil
+            </Link>
+          </div>
+          
+          <div className="mobile-user-section">
+            <div className="mobile-user-info">
+              <div className="user-avatar">
+                {userProfile?.photo_url ? (
+                  <img 
+                    src={userProfile.photo_url} 
+                    alt="Photo de profil" 
+                    className="profile-photo avatar-lg"
+                  />
+                ) : (
+                  <div className="default-avatar avatar-lg">
+                    {userProfile?.username ? userProfile.username.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <span className="username" style={{fontSize: '1.2rem', fontWeight: '600'}}>
+                {userProfile?.username || 'Utilisateur'}
+              </span>
+            </div>
+            
+            <div className="mobile-user-buttons">
+              <button 
+                onClick={() => {
+                  navigate('/profile')
+                  closeMobileMenu()
+                }} 
+                className="profile-btn"
+              >
+                Ouvrir profil
+              </button>
+              <button 
+                onClick={() => {
+                  handleSignOut()
+                  closeMobileMenu()
+                }} 
+                className="sign-out-btn"
+              >
+                Déconnexion
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
