@@ -16,7 +16,6 @@ export class AIService {
     const prompt = this.buildPrompt(title, description, existingQuestions, additionalContext, questionCount)
 
     try {
-      console.log(`Génération avec Llama 3.2 3B`)
       console.log('Modèle utilisé:', MODEL)
       console.log('API Key présente:', !!OPENROUTER_API_KEY)
       
