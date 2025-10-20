@@ -1,8 +1,6 @@
-<<<<<<< HEAD
-const OPENROUTER_API_KEY = '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'
-=======
+
 const OPENROUTER_API_KEY = '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'
->>>>>>> 11a469a1d232b5dda32ac6e19d38771ec7ac5601
+
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Modèles gratuits disponibles sur OpenRouter
 const MODEL = 'meta-llama/llama-4-maverick:free' // Alternative: 'meta-llama/llama-3.2-3b-instruct:free', 'qwen/qwen-2-7b-instruct:free'
@@ -21,10 +19,7 @@ export class AIService {
     const prompt = this.buildPrompt(title, description, existingQuestions, additionalContext, questionCount)
 
     try {
-<<<<<<< HEAD
       console.log(`Génération avec IA`)
-=======
->>>>>>> 11a469a1d232b5dda32ac6e19d38771ec7ac5601
       console.log('Modèle utilisé:', MODEL)
       console.log('API Key présente:', !!OPENROUTER_API_KEY)
       
