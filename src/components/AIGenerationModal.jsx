@@ -11,8 +11,8 @@ const AIGenerationModal = ({ isOpen, onClose, quizz, existingQuestions, onQuesti
   const [step, setStep] = useState('config') // 'config' | 'preview' | 'generating'
 
   const handleGenerate = async () => {
-    if (questionCount < 1 || questionCount > 10) {
-      setError('Le nombre de questions doit être entre 1 et 10')
+    if (questionCount < 1 || questionCount > 100) {
+      setError('Le nombre de questions doit être entre 1 et 100')
       return
     }
 
@@ -100,9 +100,9 @@ const AIGenerationModal = ({ isOpen, onClose, quizz, existingQuestions, onQuesti
                 onChange={(e) => setQuestionCount(parseInt(e.target.value) || 1)}
                 className="form-input"
                 min="1"
-                max="10"
+                max="100"
               />
-              <span className="help-text">Entre 1 et 10 questions</span>
+              <span className="help-text">Entre 1 et 100 questions</span>
             </div>
 
             <div className="form-group">

@@ -1,6 +1,7 @@
-const OPENROUTER_API_KEY = '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'
+const OPENROUTER_API_KEY = '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'
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
-const MODEL = 'deepseek/deepseek-chat-v3.1:free'
+// Modèles gratuits disponibles sur OpenRouter
+const MODEL = 'meta-llama/llama-4-maverick:free' // Alternative: 'meta-llama/llama-3.2-3b-instruct:free', 'qwen/qwen-2-7b-instruct:free'
 
 export class AIService {
   static async generateQuestions(quizzData, options = {}) {
@@ -16,7 +17,7 @@ export class AIService {
     const prompt = this.buildPrompt(title, description, existingQuestions, additionalContext, questionCount)
 
     try {
-      console.log(`Génération avec Llama 3.2 3B`)
+      console.log(`Génération avec IA`)
       console.log('Modèle utilisé:', MODEL)
       console.log('API Key présente:', !!OPENROUTER_API_KEY)
       
@@ -41,7 +42,7 @@ export class AIService {
             }
           ],
           temperature: 0.7,
-          max_tokens: 2000
+          max_tokens: Math.min(4000, questionCount * 150 + 500)
         })
       })
 
@@ -76,8 +77,8 @@ export class AIService {
 
       // Parser la réponse JSON
       const questions = this.parseAIResponse(content)
-      console.log('Questions générées avec succès par Llama 3.2 3B')
-      return { success: true, questions, usedModel: 'Llama 3.2 3B' }
+      console.log('Questions générées avec succès')
+      return { success: true, questions, usedModel: MODEL.split('/')[1]?.split(':')[0] || 'IA' }
 
     } catch (error) {
       console.error('Erreur génération IA:', error)
@@ -89,7 +90,7 @@ export class AIService {
   }
 
   static buildPrompt(title, description, existingQuestions, additionalContext, questionCount) {
-    let prompt = `Génère ${questionCount} questions de quiz sur le thème "${title}"`
+    let prompt = `Génère exactement ${questionCount} questions de quiz sur le thème "${title}"`
     
     if (description) {
       prompt += ` avec la description suivante: "${description}"`
@@ -101,9 +102,12 @@ export class AIService {
 
     if (existingQuestions.length > 0) {
       prompt += `\n\nQuestions déjà créées (évite de les répéter):\n`
-      existingQuestions.forEach((q, index) => {
+      existingQuestions.slice(0, 10).forEach((q, index) => {
         prompt += `${index + 1}. ${q.question_text}\n`
       })
+      if (existingQuestions.length > 10) {
+        prompt += `... et ${existingQuestions.length - 10} autres questions\n`
+      }
     }
 
     prompt += `\n\nRéponds uniquement avec un JSON valide dans ce format exact:
@@ -122,11 +126,13 @@ export class AIService {
 }
 
 Règles importantes:
+- Génère exactement ${questionCount} questions, ni plus ni moins
 - Pour les questions "text", ne mets pas de choix (choice_a, choice_b, etc.)
 - Pour les questions "multiple_choice", inclus au minimum choice_a et choice_b
 - Les réponses correctes doivent être précises et éducatives
 - Varie les types de questions (text et multiple_choice)
-- Assure-toi que le JSON est valide sans caractères d'échappement supplémentaires`
+- Assure-toi que le JSON est valide sans caractères d'échappement supplémentaires
+${questionCount > 10 ? '- Évite les répétitions en variant les angles d\'approche du sujet' : ''}`
 
     return prompt
   }
