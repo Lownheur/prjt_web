@@ -1,6 +1,5 @@
-
-const OPENROUTER_API_KEY = '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'
-
+// Configuration via variables d'environnement
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Modèles gratuits disponibles sur OpenRouter
 const MODEL = 'meta-llama/llama-4-maverick:free' // Alternative: 'meta-llama/llama-3.2-3b-instruct:free', 'qwen/qwen-2-7b-instruct:free'
