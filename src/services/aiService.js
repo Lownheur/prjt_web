@@ -1,5 +1,5 @@
 
-const OPENROUTER_API_KEY = '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'
+const OPENROUTER_API_KEY = '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'
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 // Modèles gratuits disponibles sur OpenRouter
